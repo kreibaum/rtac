@@ -3,10 +3,7 @@ mod mcts;
 mod nn;
 mod tictactoe;
 
-use std::sync::Arc;
-
-use game::Game;
-use mcts::{MctsConfigTrait, RolloutMctsConfig};
+use mcts::MctsConfigTrait;
 use tictactoe::TicTacToe;
 
 use crate::nn::NetworkMctsConfig;

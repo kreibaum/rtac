@@ -5,7 +5,7 @@ pub trait MctsConfigTrait<G: Game> {
     // Returns a new node as well as the estimated value of the node.
     // This new node than already contains all the children with their
     // prior values.
-    fn node_for_new_state(&self, state: G) -> (Node<G>, f64);
+    fn node_for_new_state(&self, state: G) -> (Node<G>, f32);
 }
 
 #[derive(Debug, Clone)]
@@ -25,10 +25,10 @@ impl<G: Game> Default for RolloutMctsConfig<G> {
 impl<G: Game> Copy for RolloutMctsConfig<G> {}
 
 impl<G: Game> MctsConfigTrait<G> for RolloutMctsConfig<G> {
-    fn node_for_new_state(&self, state: G) -> (Node<G>, f64) {
+    fn node_for_new_state(&self, state: G) -> (Node<G>, f32) {
         let actions = state.get_actions();
 
-        let prior_probability = 1.0 / actions.len() as f64;
+        let prior_probability = 1.0 / actions.len() as f32;
 
         let children = actions
             .iter()
@@ -36,7 +36,7 @@ impl<G: Game> MctsConfigTrait<G> for RolloutMctsConfig<G> {
                 Edge::new(
                     state.clone(),
                     *action,
-                    prior_probability + 0.001 * rand::random::<f64>(),
+                    prior_probability + 0.001 * rand::random::<f32>(),
                 )
             })
             .collect();
@@ -58,7 +58,7 @@ impl<G: Game> MctsConfigTrait<G> for RolloutMctsConfig<G> {
 /// Implements monte carlo tree search.
 pub struct Node<G: Game> {
     pub state: G,
-    pub visit_count: f64,
+    pub visit_count: f32,
     pub children: Vec<Edge<G>>,
 }
 
@@ -66,10 +66,10 @@ pub struct Edge<G: Game> {
     pub game: G,
     pub action: G::Action,
     pub node: Option<Node<G>>,
-    pub visit_count: f64,
-    pub total_value: f64,
-    pub expected_reward: f64, // Caches visit_count / total_value
-    pub prior_probability: f64,
+    pub visit_count: f32,
+    pub total_value: f32,
+    pub expected_reward: f32, // Caches visit_count / total_value
+    pub prior_probability: f32,
 }
 
 impl<G: Game> core::fmt::Debug for Node<G> {
@@ -117,7 +117,7 @@ impl<G: Game> Node<G> {
     /// Choose an action that maximizes Q+U.
     fn choose_edge_index(&self) -> usize {
         let mut best_action_index = 0;
-        let mut best_action_value = -std::f64::INFINITY;
+        let mut best_action_value = -std::f32::INFINITY;
 
         for (i, action) in self.children.iter().enumerate() {
             let expected_reward = action.expected_reward;
@@ -138,7 +138,7 @@ impl<G: Game> Node<G> {
         best_action_index
     }
 
-    pub fn walk_to_leaf(&mut self, config: &impl MctsConfigTrait<G>) -> f64 {
+    pub fn walk_to_leaf(&mut self, config: &impl MctsConfigTrait<G>) -> f32 {
         if self.children.is_empty() {
             return score_terminal_victory_state(&self.state, self.state.get_player());
         }
@@ -178,7 +178,7 @@ fn random_rollout<G: Game>(state: &mut G) {
 
 /// Returns a score for a terminal state. Panics, if the state is not
 /// terminal.
-fn score_terminal_victory_state(state: &impl Game, player: crate::game::Player) -> f64 {
+fn score_terminal_victory_state(state: &impl Game, player: crate::game::Player) -> f32 {
     match state.get_victory_state() {
         crate::game::VictoryState::InProgress => panic!("Game should be over"),
         crate::game::VictoryState::Draw => 0.0,
@@ -193,7 +193,7 @@ fn score_terminal_victory_state(state: &impl Game, player: crate::game::Player) 
 }
 
 impl<G: Game> Edge<G> {
-    pub fn new(game: G, action: G::Action, prior_probability: f64) -> Edge<G> {
+    pub fn new(game: G, action: G::Action, prior_probability: f32) -> Edge<G> {
         Edge {
             game,
             action,
