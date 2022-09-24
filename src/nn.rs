@@ -31,6 +31,8 @@ pub fn tensorize(state: &TicTacToe) -> Tensor1D<9> {
 pub struct NetworkMctsConfig {
     pub mlp: MultiLayerPerceptron,
     pub temperature: f32,
+    pub power: usize,
+    pub batch_size: usize,
 }
 
 type MultiLayerPerceptron = (
@@ -49,7 +51,21 @@ impl NetworkMctsConfig {
         NetworkMctsConfig {
             mlp,
             temperature: 1.0,
+            power: 10000,
+            batch_size: 100,
         }
+    }
+    pub fn with_power(self, power: usize) -> NetworkMctsConfig {
+        NetworkMctsConfig { power, ..self }
+    }
+    pub fn with_temperature(self, temperature: f32) -> NetworkMctsConfig {
+        NetworkMctsConfig {
+            temperature,
+            ..self
+        }
+    }
+    pub fn with_batch_size(self, batch_size: usize) -> NetworkMctsConfig {
+        NetworkMctsConfig { batch_size, ..self }
     }
 }
 

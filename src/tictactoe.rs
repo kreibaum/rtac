@@ -12,6 +12,13 @@ pub struct TicTacToe {
 
 type Action = (usize, usize);
 
+pub fn action_to_index(action: Action) -> usize {
+    action.0 + action.1 * 3
+}
+pub fn index_to_action(index: usize) -> Action {
+    (index % 3, index / 3)
+}
+
 impl TicTacToe {
     pub fn new() -> TicTacToe {
         TicTacToe {
