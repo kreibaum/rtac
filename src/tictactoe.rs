@@ -13,7 +13,7 @@ pub struct TicTacToe {
 type Action = (usize, usize);
 
 impl TicTacToe {
-    fn new() -> TicTacToe {
+    pub fn new() -> TicTacToe {
         TicTacToe {
             board: [[None, None, None], [None, None, None], [None, None, None]],
             current_player: Player::X,
@@ -70,22 +70,14 @@ impl Display for TicTacToe {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct TicTacToeGame;
-
-impl Game for TicTacToeGame {
+impl Game for TicTacToe {
     type Action = Action;
-    type State = TicTacToe;
 
-    fn initial_state(&self) -> Self::State {
-        TicTacToe::new()
-    }
-
-    fn get_actions(&self, state: &Self::State) -> Vec<Self::Action> {
+    fn get_actions(&self) -> Vec<Self::Action> {
         let mut result = Vec::with_capacity(9);
         for x in 0..3 {
             for y in 0..3 {
-                if state.board[x][y].is_none() {
+                if self.board[x][y].is_none() {
                     result.push((x, y));
                 }
             }
@@ -93,22 +85,22 @@ impl Game for TicTacToeGame {
         result
     }
 
-    fn apply_action(&self, state: &mut Self::State, action: Self::Action) {
-        state.play(self.get_player(state), action);
-        state.current_player = !state.current_player;
+    fn apply_action(&mut self, action: Self::Action) {
+        self.play(self.get_player(), action);
+        self.current_player = !self.current_player;
     }
 
-    fn get_victory_state(&self, state: &Self::State) -> crate::game::VictoryState {
-        if let Some(winner) = state.winner() {
+    fn get_victory_state(&self) -> crate::game::VictoryState {
+        if let Some(winner) = self.winner() {
             crate::game::VictoryState::Won(winner)
-        } else if self.get_actions(state).is_empty() {
+        } else if self.get_actions().is_empty() {
             crate::game::VictoryState::Draw
         } else {
             crate::game::VictoryState::InProgress
         }
     }
 
-    fn get_player(&self, state: &Self::State) -> Player {
-        state.current_player
+    fn get_player(&self) -> Player {
+        self.current_player
     }
 }

@@ -2,8 +2,7 @@ use crate::game::Game;
 
 /// Implements monte carlo tree search.
 pub struct Node<G: Game> {
-    pub game: G,
-    pub state: G::State,
+    pub state: G,
     pub visit_count: f64,
     pub children: Vec<Edge<G>>,
 }
@@ -60,8 +59,8 @@ impl<G: Game> core::fmt::Debug for Edge<G> {
 }
 
 impl<G: Game> Node<G> {
-    pub fn new(game: G, state: G::State) -> Node<G> {
-        let actions = game.get_actions(&state);
+    pub fn new(game: G) -> Node<G> {
+        let actions = game.get_actions();
 
         let prior_probability = 1.0 / actions.len() as f64;
 
@@ -71,8 +70,7 @@ impl<G: Game> Node<G> {
             .collect();
 
         Node {
-            game,
-            state,
+            state: game,
             visit_count: 0.0,
             children,
         }
@@ -87,7 +85,7 @@ impl<G: Game> Node<G> {
             let expected_reward = action.expected_reward;
             // We add + 0.0001 so the policy is already respected in the first
             // step.
-            let explore_value = self.game.exploration_factor()
+            let explore_value = self.state.exploration_factor()
                 * action.prior_probability
                 * ((self.visit_count).sqrt() / (1.0 + action.visit_count) + 0.0001);
             let action_value = expected_reward + explore_value;
@@ -104,8 +102,7 @@ impl<G: Game> Node<G> {
 
     pub fn walk_to_leaf(&mut self) -> f64 {
         if self.children.is_empty() {
-            return self
-                .score_terminal_victory_state(&self.state, self.game.get_player(&self.state));
+            return score_terminal_victory_state(&self.state, self.state.get_player());
         }
 
         let edge_index = self.choose_edge_index();
@@ -131,37 +128,37 @@ impl<G: Game> Node<G> {
     }
 
     pub fn random_rollout(&self) -> f64 {
-        let mut state = self.state.clone();
         // We call "random_rollout" after already executing one action.
         // This means the player already changed. We want to evaluate the
         // action from the view of the player who did it and not the
         // player who now has to react to it.
-        let player = !self.game.get_player(&state);
+        let player = !self.state.get_player();
 
-        while !self.game.get_victory_state(&state).is_terminal() {
-            let actions = self.game.get_actions(&state);
-            let action = actions[rand::random::<usize>() % actions.len()];
-            self.game.apply_action(&mut state, action);
-        }
-        self.score_terminal_victory_state(&state, player)
+        let mut state = self.state.clone();
+        random_rollout(&mut state);
+        score_terminal_victory_state(&state, player)
     }
+}
 
-    /// Returns a score for a terminal state. Panics, if the state is not
-    /// terminal.
-    fn score_terminal_victory_state(
-        &self,
-        state: &<G as Game>::State,
-        player: crate::game::Player,
-    ) -> f64 {
-        match self.game.get_victory_state(&state) {
-            crate::game::VictoryState::InProgress => panic!("Game should be over"),
-            crate::game::VictoryState::Draw => 0.0,
-            crate::game::VictoryState::Won(winner) => {
-                if winner == player {
-                    1.0
-                } else {
-                    -1.0
-                }
+fn random_rollout<G: Game>(state: &mut G) {
+    while !state.get_victory_state().is_terminal() {
+        let actions = state.get_actions();
+        let action = actions[rand::random::<usize>() % actions.len()];
+        state.apply_action(action);
+    }
+}
+
+/// Returns a score for a terminal state. Panics, if the state is not
+/// terminal.
+fn score_terminal_victory_state(state: &impl Game, player: crate::game::Player) -> f64 {
+    match state.get_victory_state() {
+        crate::game::VictoryState::InProgress => panic!("Game should be over"),
+        crate::game::VictoryState::Draw => 0.0,
+        crate::game::VictoryState::Won(winner) => {
+            if winner == player {
+                1.0
+            } else {
+                -1.0
             }
         }
     }
@@ -180,9 +177,9 @@ impl<G: Game> Edge<G> {
         }
     }
 
-    fn expand(&mut self, parent_state: &G::State) {
+    fn expand(&mut self, parent_state: &G) {
         let mut state = parent_state.clone();
-        self.game.apply_action(&mut state, self.action);
-        self.node = Some(Node::new(self.game.clone(), state));
+        state.apply_action(self.action);
+        self.node = Some(Node::new(state));
     }
 }

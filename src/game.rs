@@ -34,19 +34,22 @@ impl VictoryState {
     }
 }
 
-pub trait Game: Clone + Debug {
+pub trait Game: Clone + Debug + Display {
     type Action: Copy + Debug;
-    type State: Clone + Debug + Display;
 
-    fn initial_state(&self) -> Self::State;
-    fn get_actions(&self, state: &Self::State) -> Vec<Self::Action>;
+    fn get_actions(&self) -> Vec<Self::Action>;
 
     /// Applies an action to a state and returns the new state.
-    fn apply_action(&self, state: &mut Self::State, action: Self::Action);
-    fn get_victory_state(&self, state: &Self::State) -> VictoryState;
-    fn get_player(&self, state: &Self::State) -> Player;
+    fn apply_action(&mut self, action: Self::Action);
+    fn get_victory_state(&self) -> VictoryState;
+    fn get_player(&self) -> Player;
 
     fn exploration_factor(&self) -> f64 {
         1.0
     }
 }
+
+// pub trait GameMetadata {
+//     type Game: Game;
+//     fn initial_state() -> Self::Game;
+// }

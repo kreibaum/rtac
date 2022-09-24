@@ -2,24 +2,23 @@ mod game;
 mod mcts;
 mod tictactoe;
 
-use game::Game;
-use tictactoe::TicTacToeGame;
+use tictactoe::TicTacToe;
 
 use crate::mcts::Node;
 
 fn main() {
-    let ttt = TicTacToeGame.initial_state();
+    let ttt = TicTacToe::new();
 
-    let mut node = Node::new(TicTacToeGame, ttt);
+    let mut node = Node::new(ttt);
 
-    for i in 0..10000 {
+    for _ in 0..10_000 {
         node.walk_to_leaf();
     }
 
     // Output the values for all actions:
     for edge in node.children.iter() {
         println!(
-            "Action {:?} has value {} and was visited {} times",
+            "Action {:?} has value {:+.4} and was visited {} times",
             edge.action, edge.expected_reward, edge.visit_count
         );
     }
