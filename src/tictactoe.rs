@@ -95,10 +95,7 @@ impl Game for TicTacToeGame {
 
     fn apply_action(&self, state: &mut Self::State, action: Self::Action) {
         state.play(self.get_player(state), action);
-        state.current_player = match state.current_player {
-            Player::X => Player::O,
-            Player::O => Player::X,
-        };
+        state.current_player = !state.current_player;
     }
 
     fn get_victory_state(&self, state: &Self::State) -> crate::game::VictoryState {

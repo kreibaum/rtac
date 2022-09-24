@@ -8,8 +8,6 @@ use tictactoe::TicTacToeGame;
 use crate::mcts::Node;
 
 fn main() {
-    println!("Hello, world!");
-
     let ttt = TicTacToeGame.initial_state();
 
     let mut node = Node::new(TicTacToeGame, ttt);
@@ -21,10 +19,8 @@ fn main() {
     // Output the values for all actions:
     for edge in node.children.iter() {
         println!(
-            "Action {:?} has value {}",
-            edge.action, edge.expected_reward
+            "Action {:?} has value {} and was visited {} times",
+            edge.action, edge.expected_reward, edge.visit_count
         );
     }
-
-    //println!("Node: {:#?}, value: {}", node, value);
 }

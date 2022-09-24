@@ -1,7 +1,6 @@
 use crate::game::Game;
 
 /// Implements monte carlo tree search.
-#[derive(Debug)]
 pub struct Node<G: Game> {
     pub game: G,
     pub state: G::State,
@@ -9,7 +8,6 @@ pub struct Node<G: Game> {
     pub children: Vec<Edge<G>>,
 }
 
-#[derive(Debug)]
 pub struct Edge<G: Game> {
     pub game: G,
     pub action: G::Action,
@@ -18,6 +16,47 @@ pub struct Edge<G: Game> {
     pub total_value: f64,
     pub expected_reward: f64, // Caches visit_count / total_value
     pub prior_probability: f64,
+}
+
+impl<G: Game> core::fmt::Debug for Node<G> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.state)?;
+        writeln!(
+            f,
+            "This node has {} children with a total of {} visits",
+            self.children.len(),
+            self.visit_count,
+        )?;
+
+        for edge in self.children.iter() {
+            writeln!(f, "{:?}", edge)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<G: Game> core::fmt::Debug for Edge<G> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.node {
+            Some(node) => {
+                writeln!(
+                    f,
+                    "Action {:?}, prior probability {:.4}, visit count {}, total value {}, expected reward {}",
+                    self.action, self.prior_probability, self.visit_count, self.total_value, self.expected_reward
+                )?;
+                format!("{:?}", node)
+                    .split('\n')
+                    .for_each(|line| writeln!(f, "  {}", line).unwrap());
+            }
+            None => write!(
+                f,
+                "Action {:?}, prior probability {:.4}, unexpanded node.",
+                self.action, self.prior_probability
+            )?,
+        }
+        Ok(())
+    }
 }
 
 impl<G: Game> Node<G> {
@@ -93,7 +132,11 @@ impl<G: Game> Node<G> {
 
     pub fn random_rollout(&self) -> f64 {
         let mut state = self.state.clone();
-        let player = self.game.get_player(&state);
+        // We call "random_rollout" after already executing one action.
+        // This means the player already changed. We want to evaluate the
+        // action from the view of the player who did it and not the
+        // player who now has to react to it.
+        let player = !self.game.get_player(&state);
 
         while !self.game.get_victory_state(&state).is_terminal() {
             let actions = self.game.get_actions(&state);

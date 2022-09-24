@@ -1,5 +1,8 @@
 /// Defines a trait for generic games on which we can run MCTS.
-use std::fmt::Debug;
+use std::{
+    fmt::{Debug, Display},
+    ops::Not,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Player {
@@ -7,6 +10,18 @@ pub enum Player {
     O,
 }
 
+impl Not for Player {
+    type Output = Player;
+
+    fn not(self) -> Self::Output {
+        match self {
+            Player::X => Player::O,
+            Player::O => Player::X,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum VictoryState {
     InProgress,
     Draw,
@@ -15,16 +30,13 @@ pub enum VictoryState {
 
 impl VictoryState {
     pub fn is_terminal(&self) -> bool {
-        match self {
-            VictoryState::InProgress => false,
-            _ => true,
-        }
+        !matches!(self, VictoryState::InProgress)
     }
 }
 
 pub trait Game: Clone + Debug {
     type Action: Copy + Debug;
-    type State: Clone + Debug;
+    type State: Clone + Debug + Display;
 
     fn initial_state(&self) -> Self::State;
     fn get_actions(&self, state: &Self::State) -> Vec<Self::Action>;
