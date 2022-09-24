@@ -60,8 +60,17 @@ fn one_training_step(state: &TicTacToe, config: NetworkMctsConfig) -> Option<Tra
     let mut sum: f32 = 0.0;
     let mut best_value = f32::NEG_INFINITY;
 
+    // Get maximum visit count to prevent numeric problems with the softmax.
+    let max_visit_count = node
+        .children
+        .iter()
+        .map(|c| c.visit_count)
+        // .max() does not work, because f32 isn't Eq.
+        .max_by(|x, y| x.abs().partial_cmp(&y.abs()).unwrap())
+        .unwrap();
+
     for edge in node.children.iter() {
-        let value = (edge.expected_reward / config.temperature).exp();
+        let value = ((edge.visit_count - max_visit_count) / config.temperature).exp();
         output[action_to_index(edge.action)] = value;
         sum += value;
         if value > best_value {

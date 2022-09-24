@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 rand = "0.8.3"
 dfdx = "0.9.0"
+serde = { version = "1.0.130", features = ["derive"] }
+rmp-serde = "1.1.0"
+serde-big-array = "0.4.1"

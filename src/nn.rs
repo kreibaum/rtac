@@ -36,9 +36,11 @@ pub struct NetworkMctsConfig {
 }
 
 pub type MultiLayerPerceptron = (
-    Linear<9, 13>,
+    Linear<9, 128>,
     ReLU,
-    SplitInto<((Linear<13, 9>, Softmax), (Linear<13, 1>, Tanh))>,
+    Linear<128, 128>,
+    ReLU,
+    SplitInto<((Linear<128, 9>, Softmax), (Linear<128, 1>, Tanh))>,
 );
 
 impl NetworkMctsConfig {

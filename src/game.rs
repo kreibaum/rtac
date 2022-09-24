@@ -45,7 +45,7 @@ pub trait Game: Clone + Debug + Display {
     fn get_player(&self) -> Player;
 
     fn exploration_factor(&self) -> f32 {
-        1.0
+        1.4
     }
 }
 
