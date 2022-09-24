@@ -35,7 +35,7 @@ pub struct NetworkMctsConfig {
     pub batch_size: usize,
 }
 
-type MultiLayerPerceptron = (
+pub type MultiLayerPerceptron = (
     Linear<9, 13>,
     ReLU,
     SplitInto<((Linear<13, 9>, Softmax), (Linear<13, 1>, Tanh))>,

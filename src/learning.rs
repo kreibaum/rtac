@@ -1,4 +1,4 @@
-use dfdx::tensor::{HasArrayData, Tensor1D, TensorCreator};
+use dfdx::tensor::{HasArrayData, Tensor1D, Tensor2D, TensorCreator};
 
 use crate::{
     game::Game,
@@ -12,6 +12,33 @@ pub struct TrainingDatum {
     pub input: Tensor1D<9>,
     pub improved_policy: Tensor1D<9>,
     pub expected_value: f32,
+}
+
+#[derive(Debug)]
+pub struct TrainingData<const N: usize> {
+    pub input: Tensor2D<N, 9>,
+    pub improved_policy: Tensor2D<N, 9>,
+    pub expected_value: Tensor2D<N, 1>,
+}
+
+impl<const N: usize> TrainingData<N> {
+    pub fn new(data: &[TrainingDatum]) -> Self {
+        let mut input = Tensor2D::zeros();
+        let mut improved_policy = Tensor2D::zeros();
+        let mut expected_value = Tensor2D::zeros();
+
+        for (i, datum) in data.iter().enumerate() {
+            input.mut_data()[i].copy_from_slice(datum.input.data());
+            improved_policy.mut_data()[i].copy_from_slice(datum.improved_policy.data());
+            expected_value.mut_data()[i][0] = datum.expected_value;
+        }
+
+        TrainingData {
+            input,
+            improved_policy,
+            expected_value,
+        }
+    }
 }
 
 fn one_training_step(state: &TicTacToe, config: NetworkMctsConfig) -> Option<TrainingDatum> {
@@ -52,8 +79,8 @@ fn one_training_step(state: &TicTacToe, config: NetworkMctsConfig) -> Option<Tra
     })
 }
 
-pub fn generate_training_data(config: NetworkMctsConfig) -> Vec<TrainingDatum> {
-    let mut data = Vec::with_capacity(config.batch_size);
+pub fn generate_training_data<const N: usize>(config: &NetworkMctsConfig) -> TrainingData<N> {
+    let mut data = Vec::with_capacity(N);
 
     // Collect training data.
     while data.len() < config.batch_size {
@@ -74,7 +101,7 @@ pub fn generate_training_data(config: NetworkMctsConfig) -> Vec<TrainingDatum> {
         }
     }
 
-    data
+    TrainingData::new(&data)
 }
 
 fn sample_index_from_distribution(random_distribution: &[f32]) -> usize {
