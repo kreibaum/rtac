@@ -1,7 +1,7 @@
 use crate::game::Game;
 
 // Name sucks, needs to be changed
-pub trait MctsConfigTrait<G: Game>: Copy {
+pub trait MctsConfigTrait<G: Game> {
     // Returns a new node as well as the estimated value of the node.
     // This new node than already contains all the children with their
     // prior values.
@@ -138,7 +138,7 @@ impl<G: Game> Node<G> {
         best_action_index
     }
 
-    pub fn walk_to_leaf(&mut self, config: impl MctsConfigTrait<G>) -> f64 {
+    pub fn walk_to_leaf(&mut self, config: &impl MctsConfigTrait<G>) -> f64 {
         if self.children.is_empty() {
             return score_terminal_victory_state(&self.state, self.state.get_player());
         }
@@ -165,18 +165,6 @@ impl<G: Game> Node<G> {
         self.visit_count += 1.0;
 
         value
-    }
-
-    pub fn random_rollout(&self) -> f64 {
-        // We call "random_rollout" after already executing one action.
-        // This means the player already changed. We want to evaluate the
-        // action from the view of the player who did it and not the
-        // player who now has to react to it.
-        let player = !self.state.get_player();
-
-        let mut state = self.state.clone();
-        random_rollout(&mut state);
-        score_terminal_victory_state(&state, player)
     }
 }
 
@@ -205,7 +193,7 @@ fn score_terminal_victory_state(state: &impl Game, player: crate::game::Player) 
 }
 
 impl<G: Game> Edge<G> {
-    fn new(game: G, action: G::Action, prior_probability: f64) -> Edge<G> {
+    pub fn new(game: G, action: G::Action, prior_probability: f64) -> Edge<G> {
         Edge {
             game,
             action,

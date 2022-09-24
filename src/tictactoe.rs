@@ -6,8 +6,8 @@ use crate::game::{Game, Player};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TicTacToe {
-    board: [[Option<Player>; 3]; 3],
-    current_player: Player,
+    pub board: [[Option<Player>; 3]; 3],
+    pub current_player: Player,
 }
 
 type Action = (usize, usize);
