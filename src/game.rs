@@ -39,7 +39,7 @@ pub trait Game: Clone + Debug + Display {
 
     fn get_actions(&self) -> Vec<Self::Action>;
 
-    /// Applies an action to a state and returns the new state.
+    /// Applies an action to a state, mutating it.
     fn apply_action(&mut self, action: Self::Action);
     fn get_victory_state(&self) -> VictoryState;
     fn get_player(&self) -> Player;

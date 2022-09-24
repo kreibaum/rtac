@@ -1,5 +1,60 @@
 use crate::game::Game;
 
+// Name sucks, needs to be changed
+pub trait MctsConfigTrait<G: Game>: Copy {
+    // Returns a new node as well as the estimated value of the node.
+    // This new node than already contains all the children with their
+    // prior values.
+    fn node_for_new_state(&self, state: G) -> (Node<G>, f64);
+}
+
+#[derive(Debug, Clone)]
+pub struct RolloutMctsConfig<G: Game> {
+    phantom_data: std::marker::PhantomData<G>,
+}
+
+// I can't derive this due to the phantom data.
+impl<G: Game> Default for RolloutMctsConfig<G> {
+    fn default() -> Self {
+        Self {
+            phantom_data: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<G: Game> Copy for RolloutMctsConfig<G> {}
+
+impl<G: Game> MctsConfigTrait<G> for RolloutMctsConfig<G> {
+    fn node_for_new_state(&self, state: G) -> (Node<G>, f64) {
+        let actions = state.get_actions();
+
+        let prior_probability = 1.0 / actions.len() as f64;
+
+        let children = actions
+            .iter()
+            .map(|action| {
+                Edge::new(
+                    state.clone(),
+                    *action,
+                    prior_probability + 0.001 * rand::random::<f64>(),
+                )
+            })
+            .collect();
+
+        let node = Node {
+            state,
+            visit_count: 0.0,
+            children,
+        };
+
+        let mut state_clone = node.state.clone();
+        random_rollout(&mut state_clone);
+        let value = score_terminal_victory_state(&state_clone, node.state.get_player());
+
+        (node, value)
+    }
+}
+
 /// Implements monte carlo tree search.
 pub struct Node<G: Game> {
     pub state: G,
@@ -59,23 +114,6 @@ impl<G: Game> core::fmt::Debug for Edge<G> {
 }
 
 impl<G: Game> Node<G> {
-    pub fn new(game: G) -> Node<G> {
-        let actions = game.get_actions();
-
-        let prior_probability = 1.0 / actions.len() as f64;
-
-        let children = actions
-            .iter()
-            .map(|action| Edge::new(game.clone(), *action, prior_probability))
-            .collect();
-
-        Node {
-            state: game,
-            visit_count: 0.0,
-            children,
-        }
-    }
-
     /// Choose an action that maximizes Q+U.
     fn choose_edge_index(&self) -> usize {
         let mut best_action_index = 0;
@@ -100,7 +138,7 @@ impl<G: Game> Node<G> {
         best_action_index
     }
 
-    pub fn walk_to_leaf(&mut self) -> f64 {
+    pub fn walk_to_leaf(&mut self, config: impl MctsConfigTrait<G>) -> f64 {
         if self.children.is_empty() {
             return score_terminal_victory_state(&self.state, self.state.get_player());
         }
@@ -110,12 +148,14 @@ impl<G: Game> Node<G> {
 
         let value = if let Some(ref mut child_node) = edge.node {
             // Here we assume alternating players.
-            -child_node.walk_to_leaf()
+            -child_node.walk_to_leaf(config)
         } else {
-            edge.expand(&self.state);
+            let mut new_state = self.state.clone();
+            new_state.apply_action(edge.action);
+            let (new_node, value) = config.node_for_new_state(new_state);
 
-            // Do a random rollout.
-            edge.node.as_ref().unwrap().random_rollout()
+            edge.node = Some(new_node);
+            -value
         };
 
         edge.total_value += value;
@@ -175,11 +215,5 @@ impl<G: Game> Edge<G> {
             expected_reward: 0.0,
             prior_probability,
         }
-    }
-
-    fn expand(&mut self, parent_state: &G) {
-        let mut state = parent_state.clone();
-        state.apply_action(self.action);
-        self.node = Some(Node::new(state));
     }
 }

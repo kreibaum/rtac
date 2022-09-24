@@ -2,17 +2,18 @@ mod game;
 mod mcts;
 mod tictactoe;
 
+use mcts::{MctsConfigTrait, RolloutMctsConfig};
 use tictactoe::TicTacToe;
-
-use crate::mcts::Node;
 
 fn main() {
     let ttt = TicTacToe::new();
 
-    let mut node = Node::new(ttt);
+    let config: RolloutMctsConfig<TicTacToe> = RolloutMctsConfig::default();
+
+    let mut node = config.node_for_new_state(ttt).0;
 
     for _ in 0..10_000 {
-        node.walk_to_leaf();
+        node.walk_to_leaf(config);
     }
 
     // Output the values for all actions:
